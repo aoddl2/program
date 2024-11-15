@@ -1,11 +1,23 @@
-SELECT CONVERT(DATE_FORMAT(e1.DIFFERENTIATION_DATE,'%Y'), SIGNED) AS YEAR
-     , e2.BIG - e1.SIZE_OF_COLONY AS YEAR_DEV
-     , e1.ID
-FROM ECOLI_DATA e1
-        JOIN
-     (SELECT DATE_FORMAT(DIFFERENTIATION_DATE,'%Y') AS YEARs
-           , MAX(SIZE_OF_COLONY) AS BIG
-      FROM ECOLI_DATA 
-      GROUP BY DATE_FORMAT(DIFFERENTIATION_DATE,'%Y')) e2 
-      ON DATE_FORMAT(e1.DIFFERENTIATION_DATE,'%Y') = e2.YEARs
-ORDER BY YEAR ASC, YEAR_DEV ASC
+with yearly_max as (
+    select
+        year(differentiation_date) as year,
+        max(size_of_colony) as max_size
+    from ecoli_data
+    group by year(differentiation_date)
+),
+colony_deviation as (
+    select
+        a.id,
+        year(a.differentiation_date) as year,
+        b.max_size - a.size_of_colony as year_dev
+    from ecoli_data a
+    join yearly_max b
+    on year(a.differentiation_date) = b.year
+)
+select
+    year,
+    year_dev,
+    id
+from colony_deviation
+order by year asc, year_dev asc;
+
